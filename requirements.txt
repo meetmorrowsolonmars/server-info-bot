@@ -1,0 +1,11 @@
+certifi==2021.10.8
+charset-normalizer==2.0.11
+hurry==1.1
+hurry.filesize==0.9
+idna==3.3
+install==1.3.5
+psutil==5.9.0
+pyTelegramBotAPI==4.3.1
+python-dotenv==0.19.2
+requests==2.27.1
+urllib3==1.26.8
