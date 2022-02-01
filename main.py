@@ -31,8 +31,8 @@ def get_disk_usage_info(disk_partition) -> str:
 
 
 disk_usage = '\n\n'.join(
-    map(get_disk_usage_info, [disk_partitions for disk_partitions in psutil.disk_partitions() if
-                              'docker' not in disk_partitions.mountpoint]))
+    map(get_disk_usage_info, [p for p in psutil.disk_partitions() if
+                              'docker' not in p.mountpoint and 'snap' not in p.mountpoint]))
 
 cpu_percent = psutil.cpu_percent(interval=1)
 cpu_times_percent = psutil.cpu_times_percent(interval=1)
