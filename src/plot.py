@@ -47,6 +47,7 @@ class Plot:
         ax.set_xlabel(self.x_label)
         ax.set_ylabel(self.y_label)
         ax.set_title(self.title)
+        fig.autofmt_xdate(rotation=25)
         self._fig, self._ax = fig, ax
 
     def save_to_file(self, filename: str):

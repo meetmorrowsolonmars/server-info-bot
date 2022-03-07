@@ -57,11 +57,13 @@ CPU_CRITICAL_BOUNDARY = float(os.getenv('CPU_CRITICAL_BOUNDARY'))
 RAM_CRITICAL_BOUNDARY = float(os.getenv('RAM_CRITICAL_BOUNDARY'))
 DISK_CRITICAL_BOUNDARY = float(os.getenv('DISK_CRITICAL_BOUNDARY'))
 PLOT_INTERVAL = int(os.getenv('PLOT_INTERVAL'))
+DISK_PLOT_INTERVAL = int(os.getenv('DISK_PLOT_INTERVAL'))
 
 bot = telebot.TeleBot(token=TELEGRAM_BOT_TOKEN)
 sent_interval = datetime.datetime.now() - datetime.timedelta(minutes=TELEGRAM_CRITICAL_SENT_INTERVAL)
 check_info_interval = datetime.datetime.now() - datetime.timedelta(minutes=CHECK_INTERVAL)
 plot_interval = datetime.datetime.now() - datetime.timedelta(minutes=PLOT_INTERVAL)
+disk_plot_interval = datetime.datetime.now() - datetime.timedelta(minutes=DISK_PLOT_INTERVAL)
 
 # Create a database connection
 session: sqlalchemy.orm.Session = database.Session()
@@ -149,7 +151,7 @@ for i in average_disk_info:
         continue
     if i[1] > DISK_CRITICAL_BOUNDARY:
         disk_infos: typing.List[models.DiskInfo] = session.query(models.DiskInfo) \
-            .where(models.DiskInfo.timestamp > plot_interval, models.DiskInfo.mountpoint == i[0]) \
+            .where(models.DiskInfo.timestamp > disk_plot_interval, models.DiskInfo.mountpoint == i[0]) \
             .order_by(sqlalchemy.asc(models.DiskInfo.timestamp)) \
             .all()
 
