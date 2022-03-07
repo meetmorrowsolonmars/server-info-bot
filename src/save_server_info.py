@@ -15,7 +15,7 @@ timestamp = datetime.datetime.now()
 disk_info = []
 
 for partition in psutil.disk_partitions():
-    if 'docker' in partition.mountpoint and 'snap' in partition.mountpoint:
+    if 'docker' in partition.mountpoint or 'snap' in partition.mountpoint:
         continue
     disk_usage = psutil.disk_usage(partition.mountpoint)
     disk_info.append(models.DiskInfo(

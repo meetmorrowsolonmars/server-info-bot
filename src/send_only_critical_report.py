@@ -145,7 +145,7 @@ average_disk_info = session.execute(disk_info_stmt, {'interval': check_info_inte
 disk_info_lines = []
 
 for i in average_disk_info:
-    if 'docker' in i[0] and 'snap' in i[0]:
+    if 'docker' in i[0] or 'snap' in i[0]:
         continue
     if i[1] > DISK_CRITICAL_BOUNDARY:
         disk_infos: typing.List[models.DiskInfo] = session.query(models.DiskInfo) \
