@@ -3,13 +3,48 @@ import os
 import typing
 
 import dotenv
-import matplotlib.pyplot as plt
 import sqlalchemy.orm
 import telebot
 from hurry.filesize import size
 
 import database
 import models
+import plot
+
+
+def is_need_to_send_message(db_session: sqlalchemy.orm.Session, message_type: str, interval: datetime.datetime) -> bool:
+    sent_message_info: models.SentMessages = db_session.query(models.SentMessages) \
+        .filter(models.SentMessages.type == message_type) \
+        .order_by(sqlalchemy.desc(models.SentMessages.timestamp)) \
+        .first()
+    return sent_message_info is None or sent_message_info.timestamp < interval
+
+
+def make_plot(data: list, limit: float) -> plot.Plot:
+    usage_line = plot.Line(
+        [info.timestamp for info in data],
+        [info.percent for info in data],
+        'blue',
+        '-',
+        'Usage'
+    )
+    limit_line = plot.Line(
+        [info.timestamp for info in data],
+        [limit for _ in range(len(data))],
+        'red',
+        '-',
+        'Limit'
+    )
+    return plot.Plot(
+        'Timestamp',
+        'Percent',
+        data[0].timestamp,
+        data[len(data) - 1].timestamp,
+        0,
+        100,
+        [usage_line, limit_line]
+    )
+
 
 dotenv.load_dotenv()
 
@@ -38,43 +73,29 @@ cpu_average_percent, = session.execute(cpu_info_stmt, {'interval': check_info_in
 
 # TODO: move to a function for memory and cpu.
 if cpu_average_percent is not None and cpu_average_percent > CPU_CRITICAL_BOUNDARY:
-    sent_message_info: models.SentMessages = session.query(models.SentMessages) \
-        .filter(models.SentMessages.type == 'cpu_info') \
-        .order_by(sqlalchemy.desc(models.SentMessages.timestamp)) \
-        .first()
-
-    if sent_message_info is None or sent_message_info.timestamp < sent_interval:
+    if is_need_to_send_message(session, 'cpu_info', sent_interval):
         cpu_infos: typing.List[models.CpuInfo] = session.query(models.CpuInfo) \
             .where(models.CpuInfo.timestamp > plot_interval) \
             .order_by(sqlalchemy.desc(models.CpuInfo.timestamp)) \
             .all()
-        cpu_infos.reverse()
         cpu_info = cpu_infos[0]
-
-        cpu_info_axis_x = [cpu_info.timestamp for cpu_info in cpu_infos]
-        cpu_info_axis_y = [cpu_info.percent for cpu_info in cpu_infos]
-        cpu_limit_axis_y = [CPU_CRITICAL_BOUNDARY for _ in range(len(cpu_infos))]
-
-        fig, ax = plt.subplots()
-        cpu_info_line, = ax.plot(cpu_info_axis_x, cpu_info_axis_y, 'b-', label='CPU percent')
-        cpu_limit_line, = ax.plot(cpu_info_axis_x, cpu_limit_axis_y, 'r-', label='CPU limit')
-        ax.legend(handles=[cpu_info_line, cpu_limit_line])
-
-        plt.axis([cpu_infos[0].timestamp, cpu_infos[len(cpu_infos) - 1].timestamp, 0, 100])
-        plt.xlabel('Timestamp')
-        plt.ylabel('Percent')
+        cpu_infos.reverse()
 
         filename = 'cpu_info.jpeg'
-        fig.savefig(filename)
+        info_plot = make_plot(cpu_infos, CPU_CRITICAL_BOUNDARY)
+        info_plot.save_to_file(filename)
 
         with open(filename, 'rb') as plot_image:
-            bot.send_photo(chat_id=TELEGRAM_CHAT_ID, photo=plot_image, caption='CPU plot')
-        bot.send_message(chat_id=TELEGRAM_CHAT_ID, text='Critical CPU usage!\n' +
-                                                        f'Current CPU percent usage: {cpu_info.percent}\n' +
-                                                        f'Current CPU times user: {cpu_info.user}\n' +
-                                                        f'Current CPU times nice: {cpu_info.nice}\n' +
-                                                        f'Current CPU times system: {cpu_info.system}\n' +
-                                                        f'Current CPU times idle: {cpu_info.idle}\n')
+            bot.send_photo(
+                chat_id=TELEGRAM_CHAT_ID,
+                photo=plot_image,
+                caption='Critical CPU usage!\n' +
+                        f'Current CPU percent usage: {cpu_info.percent}\n' +
+                        f'Current CPU times user: {cpu_info.user}\n' +
+                        f'Current CPU times nice: {cpu_info.nice}\n' +
+                        f'Current CPU times system: {cpu_info.system}\n' +
+                        f'Current CPU times idle: {cpu_info.idle}\n'
+            )
 
         session.add(models.SentMessages(type='cpu_info', timestamp=datetime.datetime.now()))
         session.commit()
@@ -88,42 +109,28 @@ ram_average_percent, = session.execute(ram_info_stmt, {'interval': check_info_in
 
 # TODO: move to a function for memory and cpu.
 if ram_average_percent is not None and ram_average_percent > RAM_CRITICAL_BOUNDARY:
-    sent_message_info: models.SentMessages = session.query(models.SentMessages) \
-        .filter(models.SentMessages.type == 'ram_info') \
-        .order_by(sqlalchemy.desc(models.SentMessages.timestamp)) \
-        .first()
-
-    if sent_message_info is None or sent_message_info.timestamp < sent_interval:
+    if is_need_to_send_message(session, 'ram_info', sent_interval):
         ram_infos: typing.List[models.RamInfo] = session.query(models.RamInfo) \
             .where(models.RamInfo.timestamp > plot_interval) \
             .order_by(sqlalchemy.desc(models.RamInfo.timestamp)) \
             .all()
-        ram_infos.reverse()
         ram_info = ram_infos[0]
-
-        ram_info_axis_x = [ram_info.timestamp for ram_info in ram_infos]
-        ram_info_axis_y = [ram_info.percent for ram_info in ram_infos]
-        ram_limit_axis_y = [RAM_CRITICAL_BOUNDARY for _ in range(len(ram_infos))]
-
-        fig, ax = plt.subplots()
-        ram_info_line, = ax.plot(ram_info_axis_x, ram_info_axis_y, 'b-', label='RAM percent')
-        ram_limit_line, = ax.plot(ram_info_axis_x, ram_limit_axis_y, 'r-', label='RAM limit')
-        ax.legend(handles=[ram_info_line, ram_limit_line])
-
-        plt.axis([ram_infos[0].timestamp, ram_infos[len(ram_infos) - 1].timestamp, 0, 100])
-        plt.xlabel('Timestamp')
-        plt.ylabel('Percent')
+        ram_infos.reverse()
 
         filename = 'ram_info.jpeg'
-        fig.savefig(filename)
+        info_plot = make_plot(ram_infos, CPU_CRITICAL_BOUNDARY)
+        info_plot.save_to_file(filename)
 
         with open(filename, 'rb') as plot_image:
-            bot.send_photo(chat_id=TELEGRAM_CHAT_ID, photo=plot_image, caption='RAM plot')
-        bot.send_message(chat_id=TELEGRAM_CHAT_ID, text='Critical RAM usage!\n' +
-                                                        f'Current RAM percent usage: {ram_info.percent}\n' +
-                                                        f'Current RAM total: {size(ram_info.total)}\n' +
-                                                        f'Current RAM available: {size(ram_info.available)}\n' +
-                                                        f'Current RAM used: {size(ram_info.used)}\n')
+            bot.send_photo(
+                chat_id=TELEGRAM_CHAT_ID,
+                photo=plot_image,
+                caption='Critical RAM usage!\n' +
+                        f'Current RAM percent usage: {ram_info.percent}\n' +
+                        f'Current RAM total: {size(ram_info.total)}\n' +
+                        f'Current RAM available: {size(ram_info.available)}\n' +
+                        f'Current RAM used: {size(ram_info.used)}\n'
+            )
 
         session.add(models.SentMessages(type='ram_info', timestamp=datetime.datetime.now()))
         session.commit()
