@@ -8,7 +8,7 @@ Create Date: 2022-04-03 22:19:09.212187
 import sqlalchemy as sa
 from alembic import op
 
-from src.models.system_load_type import SystemLoadType
+from src.models.system_load_statistics import SystemLoadType
 
 # revision identifiers, used by Alembic.
 revision = 'a23d4196b276'
