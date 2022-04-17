@@ -32,7 +32,7 @@ def upgrade():
         sa.Column('percent', sa.Float),
         sa.Column('total', sa.BigInteger),
         sa.Column('used', sa.BigInteger),
-        sa.Column('available', sa.BigInteger),
+        sa.Column('free', sa.BigInteger),
         sa.Column('device', sa.String(length=128)),
     )
 

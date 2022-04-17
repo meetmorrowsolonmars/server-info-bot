@@ -11,5 +11,5 @@ class DiskSpaceStatistics(Base):
     percent = Column(Float, name='percent')
     total = Column(BigInteger, name='total')
     used = Column(BigInteger, name='used')
-    available = Column(BigInteger, name='available')
+    free = Column(BigInteger, name='free')
     device = Column(String(length=128), name='device')

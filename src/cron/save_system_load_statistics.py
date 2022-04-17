@@ -1,7 +1,7 @@
 import sqlalchemy.orm
 
 from src.database import Session
-from src.services.system_load_factory import SystemLoadFactory
+from src.services import SystemLoadFactory
 
 if __name__ == '__main__':
     cpu_stat = SystemLoadFactory.current_cpu_load_statistics()
