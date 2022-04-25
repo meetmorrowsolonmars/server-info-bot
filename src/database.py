@@ -1,6 +1,9 @@
 import sqlalchemy.orm
+import os
 
-engine = sqlalchemy.create_engine('sqlite:///server_info.db', echo=True)
+is_debug = bool(os.getenv('DEBUG'))
+
+engine = sqlalchemy.create_engine('sqlite:///server_info.db', echo=is_debug)
 
 Session = sqlalchemy.orm.sessionmaker(bind=engine)
 

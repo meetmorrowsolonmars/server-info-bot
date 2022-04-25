@@ -2,6 +2,8 @@
 # Custom
 server_info.db
 *.jpeg
+cron.pid
+nohup.out
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
