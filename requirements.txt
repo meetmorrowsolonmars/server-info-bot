@@ -1,8 +1,5 @@
 alembic==1.7.7
-importlib-metadata==4.11.3
-importlib-resources==5.7.1
-Mako==1.2.0
-MarkupSafe==2.1.1
 psutil==5.9.0
+python-dotenv==0.20.0
 SQLAlchemy==1.4.35
-zipp==3.8.0
+pyTelegramBotAPI==4.5.0
